@@ -176,27 +176,31 @@ public class DuplicateResourceFinder {
     {
         long duplicates = 0;
 
-        for(File f : subdir.listFiles()) {
-            if(f.isDirectory()) {
-                if(!(".".equals(f.getName()) || "..".equals(f.getName()))) {
-                    duplicates += scanSubdir(baseDir, f, filter, paths);
-                }
-            } else {
-                String path = baseDir.toPath().relativize(f.toPath()).toString();
+        File[] children = subdir.listFiles();
 
-                if(null == filter || filter.accept(null, path)) {
-                    if(paths.containsKey(path)) {
-                        FileInfo info = paths.get(path);
+        if(null != children) {
+            for(File f : children) {
+                if(f.isDirectory()) {
+                    if(!(".".equals(f.getName()) || "..".equals(f.getName()))) {
+                        duplicates += scanSubdir(baseDir, f, filter, paths);
+                    }
+                } else {
+                    String path = baseDir.toPath().relativize(f.toPath()).toString();
 
-                        if(f.length() == info.getFileSize()) {
-                            System.out.println("Directory " + baseDir + " contains path " + path + " which duplicates a path from " + info.getParentFilename() + " with same file size");
+                    if(null == filter || filter.accept(null, path)) {
+                        if(paths.containsKey(path)) {
+                            FileInfo info = paths.get(path);
+
+                            if(f.length() == info.getFileSize()) {
+                                System.out.println("Directory " + baseDir + " contains path " + path + " which duplicates a path from " + info.getParentFilename() + " with same file size");
+                            } else {
+                                System.out.println("Directory " + baseDir + " contains path " + path + " which duplicates a path from " + info.getParentFilename() + " with a different file size (" + f.length() + " != " + info.getFileSize() + ")");
+                            }
+
+                            ++duplicates;
                         } else {
-                            System.out.println("Directory " + baseDir + " contains path " + path + " which duplicates a path from " + info.getParentFilename() + " with a different file size (" + f.length() + " != " + info.getFileSize() + ")");
+                            paths.put(path, new FileInfo(baseDir.getName(), f.length()));
                         }
-
-                        ++duplicates;
-                    } else {
-                        paths.put(path, new FileInfo(baseDir.getName(), f.length()));
                     }
                 }
             }
